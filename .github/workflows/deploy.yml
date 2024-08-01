@@ -37,5 +37,5 @@ jobs:
           npm install -g terraform-cli-args
 
           # Trigger Terraform run
-          terraform workspace select T1
+          terraform workspace select test-gt-actions
           terraform apply -auto-approve
