@@ -1,4 +1,4 @@
-name: Enforce Branch Protection
+name: Prevent Direct Pushes and Trigger Terraform
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  enforce-branch-protection:
+  prevent-direct-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,13 +14,33 @@ jobs:
 
       - name: Enforce branch protection
         run: |
-          protected_branches="main"
-          current_branch=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$(git rev-parse --abbrev-ref HEAD)" == "main" ]]; then
+            echo "Direct pushes to main are not allowed. Please use a pull request."
+            exit 1
+          fi
 
-          for branch in $protected_branches
-          do
-            if [[ "$current_branch" == "$branch" ]]; then
-              echo "Pushes directly to $branch are not allowed. Please create a pull request."
-              exit 1
-            fi
-          done
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-terraform-on-pull-request:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_api_key: ${{ secrets.TF_API_TOKEN }}
