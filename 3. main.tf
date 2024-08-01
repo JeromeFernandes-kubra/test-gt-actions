@@ -178,4 +178,3 @@ resource "aws_ec2_tag" "ec2_tag" {
   value       = split(":", each.value.tags)[1]
 }
 */
-
