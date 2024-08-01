@@ -165,4 +165,3 @@ resource "aws_volume_attachment" "ebs_attach" {
   instance_id = aws_instance.ec2[each.value.instance_name].id
   volume_id   = aws_ebs_volume.ebs_volumes[each.key].id
 }
-
