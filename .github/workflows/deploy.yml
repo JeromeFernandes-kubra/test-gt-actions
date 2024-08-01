@@ -1,46 +1,41 @@
-name: Prevent Direct Pushes and Trigger Terraform
+name: Terraform Workflow
 
 on:
   push:
     branches:
       - main
-
-jobs:
-  prevent-direct-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Enforce branch protection
-        run: |
-          if [[ "$(git rev-parse --abbrev-ref HEAD)" == "main" ]]; then
-            echo "Direct pushes to main are not allowed. Please use a pull request."
-            exit 1
-          fi
-
-on:
   pull_request:
     branches:
       - main
 
 jobs:
-  run-terraform-on-pull-request:
-    if: github.event.pull_request.merged == true
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+      # Prevent direct pushes to main
+      - name: Check if push to main
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ] && [ "${{ github.event_name }}" == "push" ]; then
+            echo "Direct push to main is not allowed"
+            exit 1
+          fi
+
+      # Trigger Terraform run on merge
+      - name: Trigger Terraform Run
+        if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        uses: actions/setup-node@v3
         with:
-          terraform_version: 1.0.0
+          node-version: 16
+        run: |
+          # Replace with your Terraform Cloud API token and organization
+          TF_API_TOKEN=secrets.TF_API_TOKEN
+          TF_ORG=KuTest
 
-      - name: Terraform Init
-        run: terraform init
+          # Install terraform-cli
+          npm install -g terraform-cli-args
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        env:
-          TF_VAR_api_key: ${{ secrets.TF_API_TOKEN }}
+          # Trigger Terraform run
+          terraform workspace select your_workspace
+          terraform apply -auto-approve
