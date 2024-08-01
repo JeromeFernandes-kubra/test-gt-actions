@@ -95,9 +95,11 @@ resource "local_file" "ssh_key" {
   content  = tls_private_key.key_pair.private_key_pem
 }
 
+/*
 output "key" {
   value = aws_key_pair.key_pair.key_name
 }
+*/
 
 resource "aws_instance" "ec2" {
   for_each                    = local.ec2
