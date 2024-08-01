@@ -1,6 +1,5 @@
-name: Enforce Branch Protection and Deploy to Terraform
+name: API Driven Deployments with Terraform
 
-# Trigger the workflow on pushes to the specified branch
 on:
   push:
     branches:
@@ -20,6 +19,12 @@ jobs:
 
           if [[ "$current_branch" != "$protected_branch" ]]; then
             echo "Pushes directly to $protected_branch are not allowed. Please create a pull request."
+            exit 1
+          
+      - name: Verify API Key
+        run: |
+          if [ -z "${{ secrets.TF_API_TOKEN }}" ]; then
+            echo "API_KEY secret is not set. Exiting..."
             exit 1
           fi
 
@@ -41,5 +46,4 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
         env:
-          TF_VAR_access_key: ${{ secrets.ACCESS_KEY }}
-          TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
+          TF_VAR_api_key: ${{ secrets.TF_API_TOKEN }}
