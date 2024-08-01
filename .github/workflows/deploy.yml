@@ -1,4 +1,4 @@
-name: API Driven Deployments with Terraform
+name: Enforce Branch Protection
 
 on:
   push:
@@ -14,36 +14,13 @@ jobs:
 
       - name: Enforce branch protection
         run: |
-          protected_branch="main"
+          protected_branches="main"
           current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-          if [[ "$current_branch" != "$protected_branch" ]]; then
-            echo "Pushes directly to $protected_branch are not allowed. Please create a pull request."
-            exit 1
-          
-      - name: Verify API Key
-        run: |
-          if [ -z "${{ secrets.TF_API_TOKEN }}" ]; then
-            echo "API_KEY secret is not set. Exiting..."
-            exit 1
-          fi
-
-  deploy-terraform:
-    needs: enforce-branch-protection
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 1.0.0
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        env:
-          TF_VAR_api_key: ${{ secrets.TF_API_TOKEN }}
+          for branch in $protected_branches
+          do
+            if [[ "$current_branch" == "$branch" ]]; then
+              echo "Pushes directly to $branch are not allowed. Please create a pull request."
+              exit 1
+            fi
+          done
